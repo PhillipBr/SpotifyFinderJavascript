@@ -1,0 +1,48 @@
+const fs = require('fs')
+const SpotifyWebApi = require('spotify-web-api-node');
+const token =  "BQDIVPFgqxZU-SDEWVPLojXGoFLGPoSofjU4zfuMG_q2X7BcPv8NK0qrGXJTzhgPgRbfWE4-74ioIWjMysN2qb46QBwaMo6VANMtjl1aymuzqPGNb27VwLzdXSiy8bkHKOnqBaWYIn4SZJO96okkUftK4gVFL1WkkS1sGSUyEW6bdtv59EhMAb4npBqvAXd6USrYmRUdYsGTMpSZ0se3FP6iorfmSIUOzatq6AV2rLQF0sxBabVGKvHYP8Zurg3Af9oN0pUsXQPYu9TQ84raSqhZWA7NBY4AICz_xAsGD6uC7Q";
+
+const spotifyApi = new SpotifyWebApi();
+spotifyApi.setAccessToken(token);
+
+// ARTIST TRACK FINDER
+async function searchForTracks(artistName) {
+    try {
+        const results = await spotifyApi.searchTracks(`artist:${artistName}`, { limit: 20 });
+        for(let track of results.body.tracks.items){
+            console.log("Name:", track.name);
+            console.log("Artist:", track.artists[0].name);
+            console.log("Duration:",
+                (track.duration_ms/60000 % 60).toFixed(0).padStart(2, '0') + ":" +
+                (track.duration_ms/1000 % 60).toFixed(0).padStart(2, '0'));
+            console.log("Popularity:", track.popularity);
+            console.log("Album art:", track.album.images[0].url);
+            await getTrackAnalysis(track.id);
+        }
+    } catch (err) {
+        console.error(err);
+    }
+}
+searchForTracks('Tool');// write artist name
+
+//SONG ANALYIS DATA
+
+const keyNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+
+async function getTrackAnalysis(trackId) {
+    try {
+        const analysis = await spotifyApi.getAudioAnalysisForTrack(trackId);
+        let key = keyNames[analysis.body.track.key];
+        if (analysis.body.track.mode === 0) {
+            key = key + "m";
+        }
+        console.log("Key:", key);
+        console.log("Tempo:", Math.round(analysis.body.track.tempo));
+        console.log("Loudness:", analysis.body.track.loudness);
+        console.log("");
+        console.log("..............................................................................");
+        console.log("");
+    } catch (err) {
+        console.error(err);
+    }
+}
