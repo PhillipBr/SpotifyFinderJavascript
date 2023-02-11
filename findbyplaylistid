@@ -1,0 +1,59 @@
+const fs = require('fs')
+const SpotifyWebApi = require('spotify-web-api-node');
+const token =  "BQBRREdBfqce8Z7vHYP17r2zwykRhU_dz8gp-z7H7O6hZdIVtj3Ad15KDmaDeF_x3qNUgK9zltFgI04rg3pkWlfPgi4ooxXsEZ90AaDSOtgb7b8FnKI0zSMhBO8bqhagrRq5iOQuXme_zuOEZ4JsDWwcrdP63zvQitsu1QOM7Xy7Y10htUOcO5uspJWr-F6y8RCIJxbrgNa15xGp8v8pOU3Yui3CMOmlakNJ5WAQl8kAljqgp-icz1qWuyp6U9symQ8N1t0mHYRwSCvwbFr6ELir_mL6wKhtCm1S87D3tZFCtg";
+
+const spotifyApi = new SpotifyWebApi();
+spotifyApi.setAccessToken(token);
+
+//GET MY PROFILE DATA
+function getMyData() {
+    (async () => {
+        const me = await spotifyApi.getMe();
+        // console.log(me.body);
+        getUserPlaylists(me.body.id);
+    })().catch(e => {
+        console.error(e);
+    });
+}
+
+// PLAYLIST TRACK FINDER
+async function searchForTracks(playlistId) {
+    try {
+        const results = await spotifyApi.getPlaylistTracks(playlistId, { limit: 20 });
+        for(let track of results.body.items){
+            console.log("Name:", track.track.name);
+            console.log("Artist:", track.track.artists[0].name);
+            console.log("Duration:",
+                (track.track.duration_ms/60000 % 60).toFixed(0).padStart(2, '0') + ":" +
+                (track.track.duration_ms/1000 % 60).toFixed(0).padStart(2, '0'));
+            console.log("Popularity:", track.track.popularity);
+            console.log("Album art:", track.track.album.images[0].url);
+            await getTrackAnalysis(track.track.id);
+        }
+    } catch (err) {
+        console.error(err);
+    }
+}
+searchForTracks('3UTmUr6RxIamjDeebX03NC');// write playlist ID
+
+//SONG ANALYIS DATA
+
+const keyNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+
+async function getTrackAnalysis(trackId) {
+    try {
+        const analysis = await spotifyApi.getAudioAnalysisForTrack(trackId);
+        let key = keyNames[analysis.body.track.key];
+        if (analysis.body.track.mode === 0) {
+            key = key + "m";
+        }
+        console.log("Key:", key);
+        console.log("Tempo:", Math.round(analysis.body.track.tempo));
+        console.log("Loudness:", analysis.body.track.loudness);
+        console.log("");
+        console.log("..............................................................................");
+        console.log("");
+    } catch (err) {
+        console.error(err);
+    }
+}
